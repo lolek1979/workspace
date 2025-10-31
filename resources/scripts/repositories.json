@@ -167,6 +167,14 @@
     ]
   },
   {
+    "name": "Component Shared Templates",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-shared-templates",
+    "pathElements": [
+      "domains",
+      "component-shared-templates"
+    ]
+  },
+  {
     "name": "Component Knowledge Base",
     "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-knowledge-base",
     "pathElements": [

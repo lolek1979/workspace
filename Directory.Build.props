@@ -1,0 +1,23 @@
+<Project>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<Deterministic>true</Deterministic>
+		<Nullable>enable</Nullable>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+		<LangVersion>13.0</LangVersion>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <AnalysisLevel>9.0</AnalysisLevel>
+		<EnableNETAnalyzers>true</EnableNETAnalyzers>
+	</PropertyGroup>
+	<PropertyGroup Condition="$(MSBuildProjectFullPath.EndsWith('csproj')) == True">
+		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+	</PropertyGroup>
+	<PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Test')) == False">
+		<!--<GenerateDocumentationFile>true</GenerateDocumentationFile>-->
+	</PropertyGroup>
+	<ItemGroup>
+		<Using Include="System.Guid" Alias="IdType" />
+	</ItemGroup>
+</Project>

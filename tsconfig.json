@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    /* Base Options: */
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "ES6",
+    "allowJs": true,
+    "moduleDetection": "auto",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    /* Strictness */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+
+    /* Out */
+    "module": "es2015",
+     
+  },
+  "include": ["/src/**/*", "Framework/Frontend/src/Vzp.UiCatalog/**/*"],
+  "exclude": ["node_modules"]
+}
