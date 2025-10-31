@@ -1,0 +1,67 @@
+# Script template, which checkouts SELF, builds projects, automaticaly versions them and 
+# pushes nugets to NIS repo if any
+
+parameters: 
+- name: BuildConfiguration
+  default: 'release'
+  type: string
+ 
+steps: 
+- checkout: self
+  fetchDepth: 0
+
+- script: |
+    copy $(Agent.BuildDirectory)\s\workspace\Directory.Packages.props $(Agent.BuildDirectory)\Directory.Packages.props
+    copy $(Agent.BuildDirectory)\s\workspace\Directory.Build.props $(Agent.BuildDirectory)\Directory.Build.props /y
+  displayName: Copy package config
+- task: gitversion/setup@3
+  displayName: 'Setup GitVersion'
+  inputs:
+    versionSpec: '6.x'
+
+- task: gitversion/execute@3
+  displayName: Determine Version
+  inputs:
+    targetPath: '$(System.DefaultWorkingDirectory)\$(Build.Repository.Name)'
+    useConfigFile: true
+    configFilePath: $(Agent.BuildDirectory)\s\workspace\resources\pipelines\gitversion.yml
+
+- task: UseDotNet@2
+  displayName: 'Use .NET Core sdk 8.0.400' 
+  inputs: 
+    version: 8.0.400
+ 
+- task: DotNetCoreCLI@2 
+  displayName: 'dotnet restore from feed' 
+  inputs: 
+    command: restore 
+    projects: '**/*.csproj' 
+    vstsFeed: 'NIS/nis' 
+    includeNuGetOrg: false 
+    versioningScheme: byBuildNumber
+ 
+- task: DotNetCoreCLI@2 
+  displayName: 'dotnet build' 
+  inputs: 
+    projects: '**/src/**/*.csproj' 
+    arguments: '--configuration ${{Parameters.BuildConfiguration}}' 
+    versioningScheme: byBuildNumber
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet pack' 
+  inputs: 
+    command: pack
+    packagesToPack: '**/src/**/*.csproj' 
+    nobuild: true 
+    versioningScheme: byEnvVar 
+    versionEnvVar: GitVersionExecute.SemVer
+
+- task: NuGetCommand@2
+  displayName: Pushing to nis feed
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/Vzp.*.nupkg;!$(Build.ArtifactStagingDirectory)/*.Test.nupkg'
+    nuGetFeedType: 'internal'
+    publishVstsFeed: 'NIS/nis'
+    allowPackageConflicts: true
+    versioningScheme: byBuildNumber

@@ -1,0 +1,21 @@
+# Steps template
+
+steps:
+- task: DotNetCoreCLI@2
+  displayName: 'Publish the project - $(buildConfiguration)'
+  inputs:
+    command: 'publish'
+    projects: '**/src/**/*.csproj'
+    publishWebProjects: false
+    arguments: '--no-build --configuration $(buildConfiguration)'
+    versioningScheme: byEnvVar 
+    versionEnvVar: GitVersionExecute.SemVer
+    zipAfterPublish: false
+
+- task: Docker@2
+  inputs:
+    containerRegistry: '$(dockerRegistryServiceConnection)'
+    repository: '$(imageRepository)'
+    command: 'buildAndPush'
+    Dockerfile: '**/Dockerfile'
+    tags: '$(GitVersionExecute.SemVer)'

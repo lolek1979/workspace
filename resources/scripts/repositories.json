@@ -1,0 +1,177 @@
+[
+  {
+    "name": "Workspace repository",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/workspace",
+    "pathElements": [
+      "."
+    ]
+  },
+  {
+    "name": "Application container",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/application-container",
+    "pathElements": [
+      "frameworks",
+      "application-container"
+    ]
+  },
+  {
+    "name": "Shared framework",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/shared-framework",
+    "pathElements": [
+      "frameworks",
+      "shared-framework"
+    ]
+  },
+  {
+    "name": "Component administrative proceeding",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-administrative-proceeding",
+    "pathElements": [
+      "domains",
+      "component-administrative-proceeding"
+    ]
+  },
+  {
+    "name": "Component attachments",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-attachments",
+    "pathElements": [
+      "domains",
+      "component-attachments"
+    ]
+  },
+  {
+    "name": "Component audit",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-audit",
+    "pathElements": [
+      "domains",
+      "component-audit"
+    ]
+  },
+  {
+    "name": "Component authorization",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-authorization",
+    "pathElements": [
+      "domains",
+      "component-authorization"
+    ]
+  },
+  {
+    "name": "Component codelists",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-codelists",
+    "pathElements": [
+      "domains",
+      "component-codelists"
+    ]
+  },
+  {
+    "name": "Component cdg-qr",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-cdg-qr",
+    "pathElements": [
+      "domains",
+      "component-cdg-qr"
+    ]
+  },
+  {
+    "name": "Component datawarehouse",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-datawarehouse",
+    "pathElements": [
+      "domains",
+      "component-datawarehouse"
+    ]
+  },
+  {
+    "name": "Component feedback hub",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-feedback-hub",
+    "pathElements": [
+      "domains",
+      "component-feedback-hub"
+    ]
+  },
+  {
+    "name": "Component Integration HSM",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-integration-hsm",
+    "pathElements": [
+      "domains",
+      "component-integration-hsm"
+    ]
+  },
+  {
+    "name": "Component Integration IPF",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-integration-ipf",
+    "pathElements": [
+      "domains",
+      "component-integration-ipf"
+    ]
+  },
+  {
+    "name": "Component integration ISSS/eGSB",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-integration-isss",
+    "pathElements": [
+      "domains",
+      "component-integration-isss"
+    ]
+  },
+  {
+    "name": "Component integration SUKL",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-integration-sukl",
+    "pathElements": [
+      "domains",
+      "component-integration-sukl"
+    ]
+  },
+  {
+    "name": "Component import",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-import",
+    "pathElements": [
+      "domains",
+      "component-import"
+    ]
+  },
+  {
+    "name": "Component eZadanky",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-requestform",
+    "pathElements": [
+      "domains",
+      "component-requestform"
+    ]
+  },
+  {
+    "name": "Component Shadow PDF",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-shadow-pdf",
+    "pathElements": [
+      "domains",
+      "component-shadow-pdf"
+    ]
+  },
+  {
+    "name": "Component BUS GOV",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-bus-gov",
+    "pathElements": [
+      "domains",
+      "component-bus-gov"
+    ]
+  },
+  {
+    "name": "Component external identifiers",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-external-identifiers",
+    "pathElements": [
+      "domains",
+      "component-external-identifiers"
+    ]
+  },
+  {
+    "name": "Desktop client",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/desktop-client",
+    "pathElements": [
+      "frameworks",
+      "desktop-client"
+    ]
+  },
+  {
+    "name": "Component Knowledge Base",
+    "url": "https://vzp@dev.azure.com/vzp/NIS/_git/component-knowledge-base",
+    "pathElements": [
+      "domains",
+      "component-knowledge-base"
+    ]
+  }
+]

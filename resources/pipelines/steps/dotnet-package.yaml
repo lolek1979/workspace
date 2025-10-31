@@ -1,0 +1,70 @@
+# Steps template, pack and pushes nugets to nis feed if any
+
+steps:
+- task: NuGetAuthenticate@1
+  displayName: 'Authenticate with Azure Artifacts'
+
+  # CVE/GHSA - https://devblogs.microsoft.com/nuget/how-to-scan-nuget-packages-for-security-vulnerabilities/
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet list package' 
+  inputs:
+    command: 'custom'
+    custom: 'list'
+    feedsToUse: 'config'
+    nugetConfigPath: '$(Agent.BuildDirectory)/nuget.config'
+    arguments: '$(Agent.BuildDirectory)/s/$(Build.Repository.Name) package --vulnerable --include-transitive'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet pack' 
+  inputs: 
+    command: pack
+    packagesToPack: '**/src/**/*.csproj' 
+    nobuild: true 
+    versioningScheme: byEnvVar 
+    versionEnvVar: GitVersionExecute.SemVer
+    arguments: '--no-build --configuration $(buildConfiguration)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet nuget push'
+  continueOnError: true
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/Vzp.*.nupkg;!$(Build.ArtifactStagingDirectory)/*.Test.nupkg'
+    nuGetFeedType: 'internal'
+    publishVstsFeed: 'NIS/nis'
+    versioningScheme: byEnvVar 
+    versionEnvVar: GitVersionExecute.SemVer
+    arguments: "--skip-duplicate"
+
+- checkout: workspace
+  persistCredentials: true
+  fetchDepth: "0"
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  
+- pwsh: |
+    Push-Location $env:AGENT_BUILDDIRECTORY/s/workspace
+    $env:DIRECTORY_PACKAGES_PROPS="Directory.Packages.props"
+    $projects = Get-ChildItem -Path $env:AGENT_BUILDDIRECTORY/s/$env:BUILD_REPOSITORY_NAME -Recurse -File -Include *.csproj | Select-Object BaseName
+    [bool] $modified = 0
+    $xml = [xml](Get-Content (Resolve-Path $env:DIRECTORY_PACKAGES_PROPS))
+    $xml.Project.ItemGroup.PackageVersion | Where-Object -FilterScript { ($_.Include -in $projects.BaseName) -and ($_.Version -ne $env:GITVERSIONEXECUTE_SEMVER) } | ForEach-Object { $_.SetAttribute("Version", $env:GITVERSIONEXECUTE_SEMVER) ; $modified = 1 }
+    if ($modified) {
+        git config --global user.email "tomas.radil@vzp.cz"
+        git config --global user.name "NIS Build Service (vzp)"
+        git checkout -b feature/ci-build-$env:BUILD_REPOSITORY_NAME-$env:GITVERSIONEXECUTE_SEMVER origin/main
+        $xml.Save((Resolve-Path $env:DIRECTORY_PACKAGES_PROPS))
+        git add $env:DIRECTORY_PACKAGES_PROPS
+        git commit -m "CI build $env:BUILD_REPOSITORY_NAME version $env:GITVERSIONEXECUTE_SEMVER"
+        git push --set-upstream origin feature/ci-build-$env:BUILD_REPOSITORY_NAME-$env:GITVERSIONEXECUTE_SEMVER
+        $pullRequestId = az repos pr create --repository workspace --source-branch feature/ci-build-$env:BUILD_REPOSITORY_NAME-$env:GITVERSIONEXECUTE_SEMVER --target-branch main --work-items 62571 --delete-source-branch true --auto-complete true --query pullRequestId --output tsv
+        $status = az repos pr show --id $pullRequestId --query status --output tsv
+        if ($status -eq "active") {
+          az repos pr update --status completed --bypass-policy true --bypass-policy-reason "CI build" --id $pullRequestId
+        }
+    }
+    Pop-Location
+  env:
+    AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+  displayName: 'pull request'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  continueOnError: true

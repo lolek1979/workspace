@@ -1,0 +1,97 @@
+# Steps template, which checkouts SELF, builds and tests projects, publishes results
+
+steps: 
+- checkout: self
+  fetchDepth: "0"
+
+- task: CopyFiles@2
+  displayName: 'Copy Files from workspace to: $(Agent.BuildDirectory)'
+  inputs:
+    Contents: |
+      $(Agent.BuildDirectory)/s/workspace/Directory.Packages.props
+      $(Agent.BuildDirectory)/s/workspace/Directory.Build.props
+      $(Agent.BuildDirectory)/s/workspace/.editorconfig
+      $(Agent.BuildDirectory)/s/workspace/global.json
+      $(Agent.BuildDirectory)/s/workspace/nuget.config
+    TargetFolder: '$(Agent.BuildDirectory)'
+    OverWrite: true    
+    flattenFolders: true    
+
+- task: gitversion/setup@3
+  displayName: 'Setup GitVersion'
+  inputs:
+    versionSpec: '6.0.x'
+
+- task: gitversion/execute@3
+  displayName: Determine Version
+  inputs:
+    targetPath: '$(System.DefaultWorkingDirectory)/$(Build.Repository.Name)'
+    useConfigFile: true
+    configFilePath: $(Agent.BuildDirectory)/s/workspace/resources/pipelines/gitversion.yml
+
+- task: UseDotNet@2
+  displayName: 'Use .NET Core SDK from global.json' 
+  inputs: 
+    useGlobalJson: true
+    workingDirectory: '$(Agent.BuildDirectory)'
+ 
+- pwsh: |
+    $filePath = "$(Agent.BuildDirectory)/s/$(Build.Repository.Name)/componentInfo.json"
+    if (-not (Test-Path $filePath)) {
+      Write-Output "$filePath file does not exist."
+      exit 1
+    }
+    $content = Get-Content -Path $filePath -Raw | ConvertFrom-Json
+    if ([string]::IsNullOrEmpty($content.ComponentInfo) `
+      -or [string]::IsNullOrEmpty($content.ComponentInfo.Application) `
+      -or [string]::IsNullOrEmpty($content.ComponentInfo.ComponentName) `
+      -or [string]::IsNullOrEmpty($content.ComponentInfo.ComponentCode) `
+      -or [string]::IsNullOrEmpty($content.ComponentInfo.Domain) `
+      -or [string]::IsNullOrEmpty($content.ComponentInfo.Repository)) {
+      Write-Output "One or more required properties are missing or empty."
+      exit 1
+    }
+  displayName: 'Check componentInfo.json file'
+  condition: startsWith(variables['Build.Repository.Name'], 'component-')
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet restore from nuget.config' 
+  inputs:
+    command: 'restore'
+    projects: '**/*.sln'
+    includeNuGetOrg: false
+    versioningScheme: byEnvVar 
+    versionEnvVar: GitVersionExecute.SemVer
+    feedsToUse: 'config'
+    nugetConfigPath: '$(Agent.BuildDirectory)/nuget.config'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Format code to match editorconfig settings'
+  continueOnError: true
+  inputs:
+    command: 'custom'
+    custom: 'format'
+    arguments: '$(Agent.BuildDirectory)/s/$(Build.Repository.Name) --no-restore --verify-no-changes'
+
+- task: DotNetCoreCLI@2 
+  displayName: 'dotnet build' 
+  inputs: 
+    projects: '**/*.sln' 
+    arguments: '--no-restore --configuration $(buildConfiguration) /p:GenerateTestingPlatformEntryPoint=false' 
+    versioningScheme: byEnvVar 
+    versionEnvVar: GitVersionExecute.SemVer
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet test'
+  inputs:
+    command: 'test'
+    projects: '**/*.sln' 
+    arguments: '--no-build --configuration $(buildConfiguration) --collect "XPlat Code Coverage"'
+
+- task: reportgenerator@5
+  displayName: "ReportGenerator"
+  continueOnError: true
+  inputs:
+    reports: "$(Agent.TempDirectory)/**/coverage.cobertura.xml"
+    targetdir: "coveragereport"
+    publishCodeCoverageResults: true

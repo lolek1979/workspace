@@ -1,0 +1,4 @@
+#!/bin/sh
+
+#check if code is formatted well
+dotnet format --no-restore --verify-no-changes

@@ -1,0 +1,163 @@
+steps: 
+- checkout: wiki
+  persistCredentials: true
+  fetchDepth: "0"
+  condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
+  continueOnError: true
+
+- script: |
+    set -eux
+    repo="$(Build.Repository.Name)"
+    cd "$(Build.SourcesDirectory)/workspace/resources/docfx"
+
+    cat > docfx.json <<EOF
+    {
+      "metadata": [
+        {
+          "src": [
+            {
+              "src": "$(Build.SourcesDirectory)/$repo/src",
+              "files": [ "**/*.csproj" ]
+            }
+          ],
+          "dest": "api"
+        }
+      ],
+      "build": {
+        "content": [
+          {
+            "files": [ "**/*.{md,yml}" ],
+            "exclude": [ "_site/**" ]
+          }
+        ],
+        "resource": [
+          {
+            "files": [ "images/**" ]
+          }
+        ],
+        "output": "_site",
+        "template": [ "default", "modern" ],
+        "globalMetadata": {
+          "_appName": "$repo",
+          "_appTitle": "$repo",
+          "_enableSearch": true,
+          "pdf": true
+        }
+      }
+    }
+    EOF
+
+    sed "s|__REPO_NAME__|$repo|g" toc.yml.tpl > toc.yml
+    sed "s|__REPO_NAME__|$repo|g" index.md.tpl > index.md
+
+    # generate introduction.md
+    mkdir -p docs
+    sed \
+      -e "s|__REPO_NAME__|$repo|g" \
+      -e "s|__SERVICE_PATH__|${repo#component-}|g" \
+      docs/introduction.md.tpl \
+      > docs/introduction.md
+
+    {
+      echo
+      echo "<!-- README START -->"
+      sed '1s/^#.*$//;1{/^$/d}' "$(Build.SourcesDirectory)/$repo/README.md"
+      echo "<!-- README END -->"
+    } >> docs/introduction.md
+
+    docfx docfx.json
+  displayName: 'Generate docfx.json & Build DocFX site'
+  continueOnError: true
+
+- script: |
+    set -eux
+
+    repo="$(Build.Repository.Name)"
+    src_html="$(Build.SourcesDirectory)/workspace/resources/docfx/_site"
+    dst_md="$(Build.SourcesDirectory)/workspace/resources/docfx/_md_site"
+
+    rm -rf "$dst_md" && mkdir -p "$dst_md"
+    find "$src_html" -name '*.html' | while read page; do
+      rel="${page#$src_html/}"
+      md="$dst_md/${rel%.html}.md"
+      mkdir -p "$(dirname "$md")"
+      pandoc -f html -t gfm "$page" -o "$md"
+    done
+    if [ -d "$src_html/public" ]; then
+      cp -R "$src_html/public" "$dst_md/public"
+    else
+      echo "No public directory to copy."
+    fi
+  displayName: Convert HTML → GFM Markdown
+  continueOnError: true
+
+- task: AzureCLI@2
+  displayName: Deploy to Azure DevOps Wiki
+  continueOnError: true
+  inputs:
+    azureSubscription: $(azureSubscriptionConnection)
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      set -eux
+
+      repo="$(Build.Repository.Name)"
+      wikiroot="$(Pipeline.Workspace)/s/NIS.wiki"
+      mdroot="$(Build.SourcesDirectory)/workspace/resources/docfx/_md_site"
+
+      cd "$wikiroot/NIS-Team-Wiki/Projekty/NIS"
+      touch .order
+      grep -qxF "DocFx" .order || echo "DocFx" >> .order
+      mkdir -p DocFx
+
+      cd "$wikiroot/NIS-Team-Wiki/Projekty/NIS/DocFx"
+      touch .order
+      grep -qxF "$repo" .order || echo "$repo" >> .order
+
+      compdir="$wikiroot/NIS-Team-Wiki/Projekty/NIS/DocFx/$repo"
+      rm -rf "$compdir"
+      mkdir -p "$compdir/guides" "$compdir/reference"
+
+      cat <<EOF >"$compdir/.order"
+      $repo.md
+      guides
+      reference
+      EOF
+
+      cat <<EOF >"$compdir/$repo.md"
+      # Welcome to the $repo documentation!
+
+      - [Guides](guides/introduction.md)
+      - [Reference](reference/toc.md)
+      EOF
+
+      cp -R "$mdroot/docs/." "$compdir/guides/"
+      cp -R "$mdroot/api/." "$compdir/reference/"
+
+      toc="$compdir/reference/toc.md"
+      if [ -f "$toc" ]; then
+        sed -i -E '/^<div|^<\/div|<span class=/d' "$toc"
+        sed -i 's/<[^>]*>//g' "$toc"
+        sed -i -E 's/\(([^)]+)\.html( *"[^"]*")?\)/(\1.md)/g' "$toc"
+      fi
+
+      cd "$wikiroot/NIS-Team-Wiki/Projekty/NIS"
+      cat <<EOF >DocFx.md
+      # Documentation index
+
+      EOF
+      for dir in DocFx/*; do
+        if [ -d "$dir" ] && [ -f "$dir/$(basename "$dir").md" ]; then
+          slug=$(basename "$dir")
+          echo "- [$slug](DocFx/$slug/$slug.md)" >> DocFx.md
+        fi
+      done
+
+      cd "$wikiroot"
+      git config user.email "przemyslaw.konieczny@vzp.cz"
+      git config user.name "NIS Build Service (vzp)"
+      git add .
+      git commit -m "Update docs for $repo" || echo "No changes"
+      git push https://$(System.AccessToken)@dev.azure.com/vzp/NIS/_git/NIS.wiki HEAD:wikiMaster
+  env:
+    SYSTEM_ACCESSTOKEN: $(System.AccessToken)

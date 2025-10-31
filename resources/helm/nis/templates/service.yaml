@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nis.fullname" . }}
+  labels:
+    {{- include "nis.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    {{- range .Values.service.ports }}
+    - 
+      {{- pick . "port" "targetPort" "protocol" "name" "nodePort" "appProtocol" | toYaml | nindent 6 }}
+    {{- end }}
+  selector:
+    {{- include "nis.selectorLabels" . | nindent 4 }}

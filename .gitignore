@@ -1,0 +1,16 @@
+# ignore all hidden files
+**/.*
+
+# ignore all folders
+/*
+
+# enable workspace folders
+!/resources/
+!/docs
+!/documentation/
+
+# enable important files
+!.gitignore
+!.editorconfig
+!.stylelintrc.json
+!.helmignore
