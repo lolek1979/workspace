@@ -57,8 +57,8 @@ path = sys.argv[1]
 with open(path, "r", encoding="utf-8") as fh:
     data = json.load(fh)
 
-sdk = data.get("Sdk") or {}
-version = sdk.get("Version")
+sdk = data.get("Sdk") or data.get("sdk") or {}
+version = sdk.get("Version") or sdk.get("version")
 if not version:
     raise SystemExit("Sdk.Version not found in {}".format(path))
 print(version)

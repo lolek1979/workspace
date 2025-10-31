@@ -51,6 +51,10 @@ test_git_version() {
 }
 
 restore_repositories() {
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local repo_root
+    repo_root="$(realpath "${script_dir}/../../..")"
     local repositories_file=""
     local base_directory=""
     local default_branch="main"
@@ -88,20 +92,21 @@ restore_repositories() {
     fi
 
     if [[ -z "${base_directory}" ]]; then
-        base_directory="$(pwd)"
+        base_directory="${repo_root}"
     fi
 
     mkdir -p "${base_directory}"
     base_directory="$(cd "${base_directory}" && pwd)"
 
     if [[ -z "${repositories_file}" ]]; then
-        repositories_file="${base_directory}/resources/scripts/repositories.json"
+        repositories_file="$(realpath "${script_dir}/../repositories.json")"
     elif [[ ! "${repositories_file}" = /* ]]; then
         repositories_file="$(cd "$(pwd)" && realpath "${repositories_file}")"
     fi
 
     if [[ ! -f "${repositories_file}" ]]; then
         echo "Unable to locate repositories list at ${repositories_file}" >&2
+        echo "Use -f to point to your repositories.json file if it lives elsewhere." >&2
         exit 1
     fi
 
