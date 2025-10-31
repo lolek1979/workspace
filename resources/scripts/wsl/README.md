@@ -18,6 +18,8 @@ This folder provides Bash equivalents of the original PowerShell helper modules 
   - `test-version <required>` &mdash; ensures `node --version` matches the specified major/minor/patch (e.g. `18.17.1`).
 - `pwsh.sh`
   - `test-version <required>` &mdash; confirms that PowerShell (`pwsh`) is installed and the version starts with the required string.
+- `init.sh` (located in the repository root)
+  - `./init.sh [-e both|be|fe] [--restore-repos]` &mdash; Bash equivalent of `Init.ps1`. It ensures `domains` and `frameworks` directories exist, checks the same tool versions as the PowerShell script, and optionally restores repositories via `git.sh`.
 
 Each script supports `-h`/`--help` to display usage information. Run them from your repository root, for example:
 
@@ -26,4 +28,5 @@ Each script supports `-h`/`--help` to display usage information. Run them from y
 ./resources/scripts/wsl/dotnet.sh test-version
 ./resources/scripts/wsl/node.sh test-version 18.17
 ./resources/scripts/wsl/pwsh.sh test-version 7.4.0
+./init.sh --restore-repos
 ```
